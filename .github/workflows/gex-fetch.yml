@@ -1,0 +1,32 @@
+name: ShiroFlow — Daily GEX Fetch
+
+on:
+  schedule:
+    - cron: '15 13 * * 1-5'
+  workflow_dispatch:
+
+jobs:
+  fetch-gex:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: pip install yfinance numpy scipy
+      - name: Run GEX fetch — SPY
+        run: python gex_fetch.py SPY
+      - name: Run GEX fetch — QQQ
+        run: python gex_fetch.py QQQ
+      - name: Commit and push
+        run: |
+          git config user.name "ShiroFlow Bot"
+          git config user.email "shiroflow@bot.com"
+          git add levels_SPY.json levels_SPY_prev.json levels_QQQ.json levels_QQQ_prev.json 2>/dev/null || true
+          git diff --staged --quiet || git commit -m "Auto: GEX levels $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
